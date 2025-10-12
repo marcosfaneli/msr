@@ -28,14 +28,7 @@ class _HomePageState extends State<HomePage> {
     class HelloWorld extends StatelessWidget {
       @override
       Widget build(BuildContext context) {
-        return Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: const [
-            Text('texto 1'),
-            Text('texto 2'),
-            Text('texto 3'),
-          ],
-        );
+        return Text('texto 1');
       }
     }
   ''';
@@ -232,13 +225,16 @@ class _HomePageState extends State<HomePage> {
       setState(() {
         _className = response['className'];
         _lib = response['lib'];
-        _code = response['bytecode'];
+        _code = response['code'];
         _inputCode.text = _code;
       });
       _compileCode();
     } else {
       final error = response['error'];
-      print('Erro ao chamar o serviço: $error');
+      setState(() {
+        _error = error;
+      });
+      showError();
     }
   }
 }

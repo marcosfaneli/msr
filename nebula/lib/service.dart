@@ -1,25 +1,27 @@
 import 'dart:convert';
-import 'dart:io';
 import 'package:http/http.dart' as http;
 
 class Service {
   final String url = 'http://localhost:8080/hello_widget';
   Future<Map<String, dynamic>> performAction() async {
+    try {
+      final result = await _callService();
+      return result;
+    } catch (e) {
+      print('Erro ao chamar o serviço: $e');
+      return {'success': false, 'error': e.toString()};
+    }
+  }
+    
+  Future<Map<String, dynamic>> _callService() async {
     final response = await http.put(Uri.parse(url));
 
     if (response.statusCode == 200) {
-      print('Ação do serviço executada com sucesso!');
-      final data = json.decode(response.body);
-
-      return {
-        'success': true,
-        'className': data['className'],
-        'lib': data['lib'],
-        'bytecode': data['bytecode'],
-      };
+      final Map<String, dynamic> data = jsonDecode(response.body);
+      data['success'] = true;
+      return data;
     } else {
-      print('Falha ao executar a ação do serviço. Código: ${response.statusCode}');
-      return {'success': false, 'error': response.statusCode};
+      throw Exception('Falha ao chamar o serviço: ${response.statusCode}');
     }
   }
 }
