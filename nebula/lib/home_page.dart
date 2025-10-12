@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_eval/flutter_eval.dart';
 import 'package:dart_eval/dart_eval.dart';
 import 'package:dart_eval/dart_eval_bridge.dart';
+import 'package:nebula/service.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -14,8 +15,13 @@ class _HomePageState extends State<HomePage> {
   Runtime? _runtime;
   bool _isCompiling = false;
   String? _error;
+
+  Service service = Service();
+
   final TextEditingController _inputCode = TextEditingController();
 
+  String _className = 'HelloWorld.';
+  String _lib = 'package:mfaneli/main.dart';
   String _code = '''
     import 'package:flutter/material.dart';
     
@@ -53,7 +59,7 @@ class _HomePageState extends State<HomePage> {
     });
   }
 
-  void _compileCode(String code) async {
+  void _compileCode() async {
     try {
       setState(() {
         _isCompiling = true;
@@ -71,7 +77,7 @@ class _HomePageState extends State<HomePage> {
 
       // 3. Compilar o código Dart
       final program = compiler.compile({
-        'mfaneli': {'main.dart': code},
+        'mfaneli': {'main.dart': _code},
       });
 
       // 4. Criar o Runtime a partir do programa compilado
@@ -102,6 +108,18 @@ class _HomePageState extends State<HomePage> {
       body: Center(
         child: Column(
           children: [
+            const SizedBox(height: 10),
+            ElevatedButton(
+              onPressed: _loadRemoteCode,
+              style: ElevatedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 10,
+                ),
+              ),
+              child: const Text('Executar Widget Remoto'),
+            ),
+            const SizedBox(height: 10),
             TextField(
               controller: _inputCode,
               maxLines: 10,
@@ -119,18 +137,13 @@ class _HomePageState extends State<HomePage> {
           ],
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => _compileCode(_code),
-        tooltip: 'Compilar Código',
-        child: const Icon(Icons.refresh),
-      ),
     );
   }
 
   Widget _buildBody() {
     // Mostrar loading enquanto compila
     if (_isCompiling) {
-      return compiling();
+      return showLoader();
     }
 
     // Mostrar erro se houver
@@ -146,7 +159,7 @@ class _HomePageState extends State<HomePage> {
     return const Text('Runtime não inicializado');
   }
 
-  Column compiling() {
+  Column showLoader() {
     return const Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
@@ -161,31 +174,35 @@ class _HomePageState extends State<HomePage> {
     try {
       // Executar a função HelloWorld do código compilado
       final result = _runtime!.executeLib(
-        'package:mfaneli/main.dart', // Biblioteca
-        'HelloWorld.', // Função (construtor)
+        _lib, // Biblioteca
+        _className, // Função (construtor)
         [], // Argumentos
       );
-    
+
       // Extrair o Widget do resultado
       return (result as $Value).$value as Widget;
     } catch (e) {
-      return Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const Icon(Icons.error_outline, color: Colors.orange, size: 64),
-          const SizedBox(height: 20),
-          const Text(
-            'Erro ao executar:',
-            style: TextStyle(fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 10),
-          Padding(
-            padding: const EdgeInsets.all(20.0),
-            child: Text(e.toString(), textAlign: TextAlign.center),
-          ),
-        ],
-      );
+      return showErroRender(e);
     }
+  }
+
+  Column showErroRender(Object e) {
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        const Icon(Icons.error_outline, color: Colors.orange, size: 64),
+        const SizedBox(height: 20),
+        const Text(
+          'Erro ao executar:',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
+        const SizedBox(height: 10),
+        Padding(
+          padding: const EdgeInsets.all(20.0),
+          child: Text(e.toString(), textAlign: TextAlign.center),
+        ),
+      ],
+    );
   }
 
   Column showError() {
@@ -205,5 +222,23 @@ class _HomePageState extends State<HomePage> {
         ),
       ],
     );
+  }
+
+  void _loadRemoteCode() async {
+    final response = await service.performAction();
+
+    if (response['success']) {
+      print(response);
+      setState(() {
+        _className = response['className'];
+        _lib = response['lib'];
+        _code = response['bytecode'];
+        _inputCode.text = _code;
+      });
+      _compileCode();
+    } else {
+      final error = response['error'];
+      print('Erro ao chamar o serviço: $error');
+    }
   }
 }

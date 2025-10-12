@@ -4,6 +4,7 @@ import 'package:shelf/shelf_io.dart' as shelf_io;
 import 'package:shelf_router/shelf_router.dart';
 import 'package:shelf_hotreload/shelf_hotreload.dart';
 import '../lib/compiler_service.dart';
+import '../lib/hello_widget.dart';
 
 void main(List<String> args) {
   withHotreload(() => createServer());
@@ -12,6 +13,7 @@ void main(List<String> args) {
 Future<HttpServer> createServer() async {
   final app = Router();
   final compilerService = CompilerService();
+  final helloWidget = HelloWidget();
 
   // Endpoint GET /hello
   app.get('/hello', (Request request) {
@@ -26,6 +28,13 @@ Future<HttpServer> createServer() async {
     final result = await compilerService.processCompileRequest(body);
     return Response.ok(
       result,
+      headers: {'Content-Type': 'application/json'},
+    );
+  });
+
+  app.put('/hello_widget', (Request request) {
+    return Response.ok(
+      helloWidget.toJson(),
       headers: {'Content-Type': 'application/json'},
     );
   });
