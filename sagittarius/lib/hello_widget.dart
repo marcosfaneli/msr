@@ -3,7 +3,8 @@ import 'dart:convert';
 class HelloWidget {
   String lib = 'package:mfaneli/main.dart';
   String className = 'HelloWorld.';
-  String bytecode = '''
+  String bytecode = '';
+  String code = '''
     import 'package:flutter/material.dart';
 
     class HelloWorld extends StatelessWidget {
@@ -13,18 +14,30 @@ class HelloWidget {
           padding: EdgeInsets.all(20.0),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
-            children: const [
-            TextField(
-              decoration: InputDecoration(
-                multiline: true,
-                minLines: 3,
-                keyboardType: TextInputType.multiline,
-                border: OutlineInputBorder(),
-                labelText: 'Digite algo',
+            children: [
+              Text(
+                'Hello, World!',
+                style: TextStyle(fontSize: 24),
               ),
-            )
-          ],
-        ),
+              SizedBox(height: 20),
+              TextField(
+                maxLines: 3,
+                keyboardType: TextInputType.multiline,
+                decoration: InputDecoration(
+                  border: OutlineInputBorder(),
+                  labelText: 'Digite algo',
+                ),
+              ),
+              SizedBox(height: 20),
+              ElevatedButton(
+                onPressed: () {
+                  print('Button Pressed!');
+                },
+                child: Text('Press Me'),
+              ),
+              SizedBox(height: 20),
+            ],
+          ),
         );
       }
     }
@@ -34,7 +47,7 @@ class HelloWidget {
     return jsonEncode({
       'lib': lib,
       'className': className,
-      'bytecode': bytecode,
+      'code': code, // Envia código para compilar no cliente
     });
   }
 }

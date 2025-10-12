@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:sagittarius/hello_widget_service.dart';
 import 'package:shelf/shelf.dart';
 import 'package:shelf/shelf_io.dart' as shelf_io;
 import 'package:shelf_router/shelf_router.dart';
@@ -13,7 +14,7 @@ void main(List<String> args) {
 Future<HttpServer> createServer() async {
   final app = Router();
   final compilerService = CompilerService();
-  final helloWidget = HelloWidget();
+  final helloWidgetService = HelloWidgetService();
 
   // Endpoint GET /hello
   app.get('/hello', (Request request) {
@@ -34,7 +35,7 @@ Future<HttpServer> createServer() async {
 
   app.put('/hello_widget', (Request request) {
     return Response.ok(
-      helloWidget.toJson(),
+      helloWidgetService.process().toJson(),
       headers: {'Content-Type': 'application/json'},
     );
   });
