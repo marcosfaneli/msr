@@ -3,7 +3,6 @@ import 'package:flutter_eval/flutter_eval.dart';
 import 'package:dart_eval/dart_eval.dart';
 import 'package:dart_eval/dart_eval_bridge.dart';
 import 'package:nebula/service.dart';
-import 'package:nebula/server_service.dart';
 import 'dart:convert';
 import 'dart:typed_data';
 
@@ -19,10 +18,10 @@ class _HomePageState extends State<HomePage> {
   bool _isCompiling = false;
   String? _error;
 
-  Service service = Service();
-  ServerService serverService = ServerService();
+  Service serverService = Service();
 
   final TextEditingController _inputCode = TextEditingController();
+  final TextEditingController _classNameController = TextEditingController();
 
   String _className = 'HelloWorld.';
   String _lib = 'package:mfaneli/main.dart';
@@ -40,6 +39,7 @@ class _HomePageState extends State<HomePage> {
   @override
   void dispose() {
     _inputCode.dispose();
+    _classNameController.dispose();
     super.dispose();
   }
 
@@ -47,6 +47,7 @@ class _HomePageState extends State<HomePage> {
   void initState() {
     super.initState();
     _inputCode.text = _code;
+    _classNameController.text = 'HelloWorld'; // Nome padrão da classe
   }
 
   void updateCode(String code) {
@@ -56,40 +57,72 @@ class _HomePageState extends State<HomePage> {
     });
   }
 
-  void _compileCode() async {
+  void _compileCodeOnServer() async {
+    setState(() {
+      _isCompiling = true;
+      _error = null;
+    });
+
     try {
+      print('[COMPILE SERVER] Enviando código para compilação no servidor');
+      print('[COMPILE SERVER] Código: ${_code.length} caracteres');
+      print('[COMPILE SERVER] Classe: ${_classNameController.text}');
+
+      // Enviar código para o servidor compilar
+      final response = await serverService.compileCode(
+        _code,
+        _classNameController.text.trim(),
+      );
+
+      if (response['success']) {
+        print('[COMPILE SERVER] Resposta recebida: bytecode compilado');
+
+        // O server retorna bytecode compilado em base64
+        final String base64Bytecode = response['bytecode'];
+        final String lib = response['lib'];
+        final String className = response['className'];
+
+        print(
+          '[COMPILE SERVER] Decodificando bytecode (${base64Bytecode.length} chars)',
+        );
+
+        // Decodificar o bytecode de base64
+        final bytecode = base64Decode(base64Bytecode);
+
+        print(
+          '[COMPILE SERVER] Bytecode decodificado: ${bytecode.length} bytes',
+        );
+
+        // Converter Uint8List para ByteData
+        final byteData = ByteData.sublistView(bytecode);
+
+        // Criar Runtime diretamente do bytecode
+        final runtime = Runtime(byteData);
+
+        // Adicionar o plugin do Flutter no runtime
+        runtime.addPlugin(flutterEvalPlugin);
+
+        setState(() {
+          _runtime = runtime;
+          _className = '$className.'; // Ex: HelloWorld.
+          _lib = 'package:$lib/main.dart'; // Ex: package:mfaneli/main.dart
+          _isCompiling = false;
+        });
+
+        print('[COMPILE SERVER] Runtime criado com sucesso!');
+        print('[COMPILE SERVER] Vai executar: $_lib -> $_className');
+      } else {
+        final error = response['error'];
+        setState(() {
+          _error = 'Erro do servidor: $error';
+          _isCompiling = false;
+        });
+      }
+    } catch (e, stackTrace) {
+      print('[COMPILE SERVER ERROR] $e');
+      print('[COMPILE SERVER ERROR STACK] $stackTrace');
       setState(() {
-        _isCompiling = true;
-        _error = null;
-      });
-
-      // added sleep
-      await Future.delayed(const Duration(seconds: 1));
-
-      // 1. Criar o compilador
-      final compiler = Compiler();
-
-      // 2. Adicionar o plugin do Flutter (IMPORTANTE!)
-      compiler.addPlugin(flutterEvalPlugin);
-
-      // 3. Compilar o código Dart
-      final program = compiler.compile({
-        'mfaneli': {'main.dart': _code},
-      });
-
-      // 4. Criar o Runtime a partir do programa compilado
-      final runtime = Runtime.ofProgram(program);
-
-      // 5. Adicionar o plugin do Flutter no runtime também
-      runtime.addPlugin(flutterEvalPlugin);
-
-      setState(() {
-        _runtime = runtime;
-        _isCompiling = false;
-      });
-    } catch (e) {
-      setState(() {
-        _error = e.toString();
+        _error = 'Erro ao compilar no servidor: $e';
         _isCompiling = false;
       });
     }
@@ -102,48 +135,88 @@ class _HomePageState extends State<HomePage> {
         title: const Text('Widget Dinâmico'),
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
       ),
-      body: Center(
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
         child: Column(
           children: [
             const SizedBox(height: 10),
-            ElevatedButton(
-              onPressed: _loadRemoteCode,
-              style: ElevatedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 20,
-                  vertical: 10,
-                ),
-              ),
-              child: const Text('Executar Widget Remoto (Sagittarius)'),
-            ),
-            const SizedBox(height: 10),
+            // Botão 1: Buscar widget pré-compilado do servidor
             ElevatedButton(
               onPressed: _loadFromServer,
               style: ElevatedButton.styleFrom(
                 padding: const EdgeInsets.symmetric(
                   horizontal: 20,
-                  vertical: 10,
+                  vertical: 12,
                 ),
                 backgroundColor: Colors.green,
                 foregroundColor: Colors.white,
+                minimumSize: const Size(double.infinity, 45),
               ),
-              child: const Text('Executar Widget do Server (HelloWorld)'),
+              child: const Text(
+                'Buscar Widget Pré-compilado do Server (HelloWorld)',
+                style: TextStyle(fontSize: 14),
+              ),
             ),
             const SizedBox(height: 10),
-            TextField(
-              controller: _inputCode,
-              maxLines: 10,
-              autofocus: true,
-              decoration: const InputDecoration(
-                hintText: 'Digite o código Dart aqui',
-                border: OutlineInputBorder(),
+            // Botão 2: Enviar código para compilar no servidor
+            ElevatedButton(
+              onPressed: _compileCodeOnServer,
+              style: ElevatedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 12,
+                ),
+                backgroundColor: Colors.blue,
+                foregroundColor: Colors.white,
+                minimumSize: const Size(double.infinity, 45),
               ),
-              onChanged: (value) => updateCode(value),
+              child: const Text(
+                'Compilar Código Digitado no Server e Renderizar',
+                style: TextStyle(fontSize: 14),
+              ),
             ),
             const SizedBox(height: 20),
-            Divider(),
+            // Campo para nome da classe
+            TextField(
+              controller: _classNameController,
+              decoration: const InputDecoration(
+                hintText: 'Ex: HelloWorld, MyWidget, Counter',
+                border: OutlineInputBorder(),
+                labelText: 'Nome da Classe',
+                prefixIcon: Icon(Icons.class_),
+              ),
+            ),
             const SizedBox(height: 20),
-            _buildBody(),
+            // Campo de texto para código
+            Expanded(
+              flex: 2,
+              child: TextField(
+                controller: _inputCode,
+                maxLines: null,
+                expands: true,
+                decoration: const InputDecoration(
+                  hintText: 'Digite o código Dart aqui',
+                  border: OutlineInputBorder(),
+                  labelText: 'Código Flutter/Dart',
+                ),
+                onChanged: (value) => updateCode(value),
+              ),
+            ),
+            const SizedBox(height: 20),
+            const Divider(),
+            const SizedBox(height: 20),
+            // Área de renderização
+            Expanded(
+              flex: 3,
+              child: Container(
+                width: double.infinity,
+                decoration: BoxDecoration(
+                  border: Border.all(color: Colors.grey),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Center(child: _buildBody()),
+              ),
+            ),
           ],
         ),
       ),
@@ -233,27 +306,6 @@ class _HomePageState extends State<HomePage> {
         ),
       ],
     );
-  }
-
-  void _loadRemoteCode() async {
-    final response = await service.performAction();
-
-    if (response['success']) {
-      print(response);
-      setState(() {
-        _className = response['className'];
-        _lib = response['lib'];
-        _code = response['code'];
-        _inputCode.text = _code;
-      });
-      _compileCode();
-    } else {
-      final error = response['error'];
-      setState(() {
-        _error = error;
-      });
-      showError();
-    }
   }
 
   void _loadFromServer() async {
