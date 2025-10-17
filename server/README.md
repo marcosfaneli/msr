@@ -28,18 +28,25 @@ Este servidor resolve a limitação de que `dart_eval` não pode compilar códig
 
 ## 🚀 Como Executar
 
+### Modo Headless (sem interface - recomendado para servidores)
+
+**Requisito:** Xvfb (X Virtual Framebuffer) - instalado automaticamente pelo script
+
 ```bash
-# Instalar dependências
-flutter pub get
-
-# Rodar o servidor
-dart run bin/server.dart
-
-# Ou especificar porta customizada
-PORT=9000 dart run bin/server.dart
+# Executar sem abrir janela
+./run_headless.sh
 ```
 
-O servidor estará disponível em `http://localhost:8081` (ou a porta especificada).
+O script verifica e instala o **Xvfb** automaticamente na primeira execução. O Xvfb permite rodar aplicações Flutter sem interface gráfica, criando um display virtual.
+
+### Modo Normal (com interface - desenvolvimento)
+
+```bash
+# Executar com UI (abre janela)
+flutter run -d linux lib/main.dart
+```
+
+O servidor estará disponível em `http://localhost:8081`.
 
 ## 📡 API
 
@@ -102,7 +109,26 @@ curl -X POST http://localhost:8081/compile \
   }'
 ```
 
-## 🔌 Integração com Sagittarius
+## � Dependências do Sistema
+
+### Xvfb (para modo headless)
+
+O servidor precisa do **Xvfb** para rodar sem interface gráfica:
+
+```bash
+# Ubuntu/Debian
+sudo apt-get install xvfb
+
+# Fedora/RHEL
+sudo dnf install xorg-x11-server-Xvfb
+
+# Arch Linux
+sudo pacman -S xorg-server-xvfb
+```
+
+> **Nota:** O script `run_headless.sh` instala automaticamente no Ubuntu/Debian.
+
+## �🔌 Integração com Sagittarius
 
 No seu backend Sagittarius, você pode fazer uma requisição HTTP para este servidor:
 
