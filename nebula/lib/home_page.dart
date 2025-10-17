@@ -3,6 +3,9 @@ import 'package:flutter_eval/flutter_eval.dart';
 import 'package:dart_eval/dart_eval.dart';
 import 'package:dart_eval/dart_eval_bridge.dart';
 import 'package:nebula/service.dart';
+import 'package:nebula/server_service.dart';
+import 'dart:convert';
+import 'dart:typed_data';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -17,6 +20,7 @@ class _HomePageState extends State<HomePage> {
   String? _error;
 
   Service service = Service();
+  ServerService serverService = ServerService();
 
   final TextEditingController _inputCode = TextEditingController();
 
@@ -110,7 +114,20 @@ class _HomePageState extends State<HomePage> {
                   vertical: 10,
                 ),
               ),
-              child: const Text('Executar Widget Remoto'),
+              child: const Text('Executar Widget Remoto (Sagittarius)'),
+            ),
+            const SizedBox(height: 10),
+            ElevatedButton(
+              onPressed: _loadFromServer,
+              style: ElevatedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 10,
+                ),
+                backgroundColor: Colors.green,
+                foregroundColor: Colors.white,
+              ),
+              child: const Text('Executar Widget do Server (HelloWorld)'),
             ),
             const SizedBox(height: 10),
             TextField(
@@ -180,6 +197,7 @@ class _HomePageState extends State<HomePage> {
   }
 
   Column showErroRender(Object e) {
+    print(e.toString());
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
@@ -235,6 +253,67 @@ class _HomePageState extends State<HomePage> {
         _error = error;
       });
       showError();
+    }
+  }
+
+  void _loadFromServer() async {
+    setState(() {
+      _isCompiling = true;
+      _error = null;
+    });
+
+    try {
+      final response = await serverService.executeRemoteWidget();
+
+      if (response['success']) {
+        print('[SERVER] Resposta recebida: $response');
+
+        // O server retorna bytecode compilado em base64
+        final String base64Bytecode = response['bytecode'];
+        final String lib = response['lib'];
+        final String className = response['className'];
+
+        print(
+          '[SERVER] Decodificando bytecode (${base64Bytecode.length} chars)',
+        );
+
+        // Decodificar o bytecode de base64
+        final bytecode = base64Decode(base64Bytecode);
+
+        print('[SERVER] Bytecode decodificado: ${bytecode.length} bytes');
+
+        // Converter Uint8List para ByteData
+        final byteData = ByteData.sublistView(bytecode);
+
+        // Criar Runtime diretamente do bytecode
+        final runtime = Runtime(byteData);
+
+        // Adicionar o plugin do Flutter no runtime
+        runtime.addPlugin(flutterEvalPlugin);
+
+        setState(() {
+          _runtime = runtime;
+          _className = '$className.'; // HelloWorld.
+          _lib = 'package:$lib/main.dart'; // package:mfaneli/main.dart
+          _isCompiling = false;
+        });
+
+        print('[SERVER] Runtime criado com sucesso!');
+        print('[SERVER] Vai executar: $_lib -> $_className');
+      } else {
+        final error = response['error'];
+        setState(() {
+          _error = 'Erro do servidor: $error';
+          _isCompiling = false;
+        });
+      }
+    } catch (e, stackTrace) {
+      print('[SERVER ERROR] $e');
+      print('[SERVER ERROR STACK] $stackTrace');
+      setState(() {
+        _error = 'Erro ao carregar do server: $e';
+        _isCompiling = false;
+      });
     }
   }
 }
