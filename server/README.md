@@ -17,14 +17,14 @@ Este servidor resolve a limitação de que `dart_eval` não pode compilar códig
                                             │ bytecode
                                             ▼
                                      ┌──────────────┐
-                                     │   Nebula     │
-                                     │   (Client)   │
+                                     │   Client     │
+                                     │   (App)      │
                                      └──────────────┘
 ```
 
 1. **Sagittarius**: Backend principal, retorna código Flutter como string
 2. **Server** (este projeto): Compila o código para bytecode `.evc`
-3. **Nebula**: Cliente Flutter, executa o bytecode usando `RuntimeWidget`
+3. **Client**: Aplicativo Flutter, executa o bytecode usando `RuntimeWidget`
 
 ## 🚀 Como Executar
 
@@ -147,11 +147,11 @@ final result = jsonDecode(response.body);
 final bytecode = result['bytecode']; // Base64 string
 ```
 
-Depois, retorne o bytecode para o cliente Nebula.
+Depois, retorne o bytecode para o cliente (Client app).
 
-## 🔌 Integração com Nebula (Cliente)
+## 🔌 Integração com Client (Aplicativo)
 
-No cliente Flutter, use `RuntimeWidget` para executar o bytecode:
+No aplicativo Flutter cliente, use `RuntimeWidget` para executar o bytecode:
 
 ```dart
 import 'dart:convert';
