@@ -1,4 +1,4 @@
-# MSR - Flutter Eval Project
+# MSR
 
 Sistema de compilação e execução dinâmica de widgets Flutter usando `flutter_eval` e `dart_eval`.
 
