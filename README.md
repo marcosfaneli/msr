@@ -28,21 +28,21 @@ Servidor HTTP Flutter que:
 
 ```
 ┌─────────────────────────────────────────────────────┐
-│                  NEBULA (Cliente)                    │
-│                                                      │
+│                  NEBULA (Cliente)                   │
+│                                                     │
 │  1. Buscar Widget Pré-compilado (HelloWorld)        │
 │     - Servidor retorna bytecode pronto              │
-│                                                      │
+│                                                     │
 │  2. Compilar Código Customizado                     │
 │     - Usuário edita código e nome da classe         │
 │     - Cliente envia para servidor compilar          │
 │     - Servidor retorna bytecode                     │
-│                                                      │
+│                                                     │
 │  3. Executar Bytecode                               │
 │     - Cria Runtime a partir do bytecode             │
 │     - Renderiza widget dinamicamente                │
-│                                                      │
-└────────────────────┬─────────────────────────────────┘
+│                                                     │
+└────────────────────┬────────────────────────────────┘
                      │
                      │ HTTP (porta 8081)
                      │ POST /compile
