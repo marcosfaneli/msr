@@ -75,7 +75,7 @@ class _ServerPageState extends State<ServerPage> {
 
           // Compilar o código
           final program = compiler.compile({
-            lib: {className: code},
+            lib: {'main.dart': code},
           });
 
           // Converter o bytecode para base64

@@ -113,10 +113,18 @@ flutter run -d linux  # ou -d macos, -d windows
 
 ## 📖 Como Usar
 
-### Opção 1: Compilação Local
-1. Digite código Flutter válido no campo de texto
-2. O código será compilado localmente usando `flutter_eval`
-3. O widget será renderizado imediatamente
+### Opção 1: Buscar Widget Pré-compilado do Server
+1. Clique no botão **"Buscar Widget Pré-compilado do Server (HelloWorld)"** (verde)
+2. O app faz uma requisição POST para `http://localhost:8081/execute`
+3. O servidor compila o widget padrão (`hello_widget.dart`) e retorna bytecode
+4. O app executa o bytecode e renderiza o widget
+
+### Opção 2: Compilar Código no Server
+1. Digite ou edite o código Flutter no campo de texto
+2. Clique no botão **"Compilar Código Digitado no Server e Renderizar"** (azul)
+3. O app envia o código para `http://localhost:8081/compile`
+4. O servidor compila o código e retorna o bytecode
+5. O app executa o bytecode e renderiza o widget compilado
 
 **Exemplo de código**:
 ```dart
@@ -130,18 +138,7 @@ class HelloWorld extends StatelessWidget {
 }
 ```
 
-### Opção 2: Executar Widget do Server (HelloWorld)
-1. Clique no botão **"Executar Widget do Server (HelloWorld)"**
-2. O app faz uma requisição POST para `http://localhost:8081/execute`
-3. O servidor compila o widget padrão e retorna bytecode
-4. O app executa o bytecode e renderiza o widget
-
-### Opção 3: Widget Remoto (Sagittarius)
-1. Clique no botão **"Executar Widget Remoto (Sagittarius)"**
-2. O app busca o código de um servidor externo (porta 8080)
-3. Compila localmente e renderiza
-
-> **Nota**: Para usar esta opção, você precisa ter um servidor rodando na porta 8080 que retorne código Flutter no formato esperado.
+> **Importante**: O nome da classe deve ser `HelloWorld` para funcionar corretamente com a configuração atual.
 
 ## 🔌 API do Servidor
 
